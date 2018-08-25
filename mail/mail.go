@@ -1,12 +1,12 @@
 package mail
 
 import (
-	"github.com/kpiotrowski/go_watchdog/common"
-	"net/mail"
-	"net/smtp"
-	"net"
 	"errors"
 	"fmt"
+	"go_watchdog/common"
+	"net"
+	"net/mail"
+	"net/smtp"
 )
 
 type SenderInterface interface {
@@ -14,11 +14,11 @@ type SenderInterface interface {
 }
 
 type emailSender struct {
-	from *mail.Address
+	from           *mail.Address
 	smtpServerPort string
 	smtpServerHost string
-	to *mail.Address
-	auth smtp.Auth
+	to             *mail.Address
+	auth           smtp.Auth
 }
 
 func NewEmailSender(config common.MailConf) (*emailSender, error) {
@@ -47,8 +47,8 @@ func NewEmailSender(config common.MailConf) (*emailSender, error) {
 	return sender, nil
 }
 
-func createMessage(title string, body []byte) []byte{
-	byteMsg := []byte(fmt.Sprintf("Subject: %s\n\n",title))
+func createMessage(title string, body []byte) []byte {
+	byteMsg := []byte(fmt.Sprintf("Subject: %s\n\n", title))
 	byteMsg = append(byteMsg, body...)
 	return byteMsg
 }
@@ -59,6 +59,6 @@ func (e *emailSender) Send(title string, body []byte) error {
 		e.auth,
 		e.from.Address,
 		[]string{e.to.Address},
-		createMessage(title,body),
+		createMessage(title, body),
 	)
 }

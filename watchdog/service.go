@@ -1,29 +1,29 @@
 package watchdog
 
 import (
-	"time"
-	"fmt"
 	"errors"
+	"fmt"
+	"go_watchdog/mail"
 	"log"
-	"github.com/kpiotrowski/go_watchdog/mail"
+	"time"
 )
 
 const (
-	initDPath = "/etc/init.d/"
-	serviceCommand = "service"
-	startCommand = "start"
-	statusCommand = "status"
-	serviceDown = iota
-	serviceStart = iota
+	initDPath          = "/etc/init.d/"
+	serviceCommand     = "service"
+	startCommand       = "start"
+	statusCommand      = "status"
+	serviceDown        = iota
+	serviceStart       = iota
 	serviceCannotStart = iota
 )
 
 type serviceStruct struct {
-	name string
+	name          string
 	checkInterval time.Duration
 	startInterval time.Duration
-	startTries int
-	os osInterface
+	startTries    int
+	os            osInterface
 }
 
 func NewService(name, checkInterval, startInterval string, tries int) (*serviceStruct, error) {
@@ -32,13 +32,13 @@ func NewService(name, checkInterval, startInterval string, tries int) (*serviceS
 
 func newServiceWithOs(name, checkInterval, startInterval string, tries int, os osInterface) (*serviceStruct, error) {
 	checkI, err := time.ParseDuration(checkInterval)
-	if err != nil{
-		return  nil, err
+	if err != nil {
+		return nil, err
 	}
 
 	restartI, err := time.ParseDuration(startInterval)
-	if err != nil{
-		return  nil, err
+	if err != nil {
+		return nil, err
 	}
 
 	if tries < 1 {
@@ -48,8 +48,8 @@ func newServiceWithOs(name, checkInterval, startInterval string, tries int, os o
 	if len(name) < 1 {
 		return nil, errors.New("Service name cannot be empty")
 	}
-	if _, err := os.Stat(initDPath+name); err != nil {
-		return nil, errors.New(fmt.Sprintf("Service %s doesn't exist\n",name))
+	if _, err := os.Stat(initDPath + name); err != nil {
+		return nil, errors.New(fmt.Sprintf("Service %s doesn't exist\n", name))
 	}
 
 	service := new(serviceStruct)
@@ -78,20 +78,20 @@ func (service *serviceStruct) Start() bool {
 	return true
 }
 
-func notify(sender mail.SenderInterface, service string, attempts, status int){
+func notify(sender mail.SenderInterface, service string, attempts, status int) {
 	var logMsg string
 	var title string
 
 	switch status {
 	case serviceDown:
 		logMsg = fmt.Sprintf("%s Service %s is down", time.Now().String(), service)
-		title = service+" is down"
+		title = service + " is down"
 	case serviceStart:
-		logMsg = fmt.Sprintf("%s Service %s started after %d attempts",time.Now().String(), service, attempts)
-		title = service+" started"
+		logMsg = fmt.Sprintf("%s Service %s started after %d attempts", time.Now().String(), service, attempts)
+		title = service + " started"
 	case serviceCannotStart:
 		logMsg = fmt.Sprintf("%s Service %s can't be started after %d attempts", time.Now().String(), service, attempts)
-		title = service+" start failed"
+		title = service + " start failed"
 	}
 
 	log.Println(logMsg)
@@ -106,7 +106,7 @@ func (service *serviceStruct) Watch(sender mail.SenderInterface, stopChan chan b
 	checInterval := make(chan time.Time)
 	startInterval := make(chan time.Time)
 	go func() {
-		<- stopChan
+		<-stopChan
 		loop = false
 		checInterval <- time.Now()
 		startInterval <- time.Now()
@@ -116,12 +116,12 @@ func (service *serviceStruct) Watch(sender mail.SenderInterface, stopChan chan b
 		run := service.Running()
 		if !run {
 			notify(sender, service.name, 0, serviceDown)
-			for i:=1 ; i<= service.startTries && loop ; i++ {
-				if run = service.Start() ; run {
+			for i := 1; i <= service.startTries && loop; i++ {
+				if run = service.Start(); run {
 					notify(sender, service.name, i, serviceStart)
 					break
 				}
-				go func(){
+				go func() {
 					time.Sleep(service.startInterval)
 					startInterval <- time.Now()
 				}()
@@ -135,7 +135,7 @@ func (service *serviceStruct) Watch(sender mail.SenderInterface, stopChan chan b
 		if !loop {
 			return nil
 		}
-		go func(){
+		go func() {
 			time.Sleep(service.checkInterval)
 			checInterval <- time.Now()
 		}()
